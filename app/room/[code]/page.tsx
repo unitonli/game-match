@@ -19,7 +19,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
   return (
     <main className="min-h-screen bg-[#050505] px-6 py-8 text-white sm:px-8">
-      <section className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-6xl items-center">
+      <section className="mx-auto flex min-h-[70vh] w-full max-w-6xl items-center">
         <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="rounded-2xl border border-white/[0.08] bg-[#0b0b0b] p-6 shadow-sm shadow-black/30 sm:p-8 lg:p-10">
             <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/45">
