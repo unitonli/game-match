@@ -1,5 +1,6 @@
 import { games } from "@/src/data/games";
 import { generatedGames } from "@/src/data/generated-games";
+import { questions } from "@/src/data/questions";
 import type { Game } from "@/src/types/game";
 
 export type MatchGamesAnswers = Partial<Record<string, string | string[]>>;
@@ -25,15 +26,18 @@ const MATCH_WEIGHTS = {
 
 const DISLIKED_GENRE_PENALTY = 25;
 const MAX_DISLIKED_GENRE_PENALTY = 60;
-const gameSource = generatedGames.length > 0 ? generatedGames : games;
-
-console.log(`Games loaded: ${gameSource.length}`);
+const availableGames = generatedGames.length > 0 ? generatedGames : games;
 
 export function matchGames(answers: MatchGamesAnswers): GameMatchResult[] {
-  return gameSource
+  logGameDatabaseDiagnostics(availableGames);
+
+  const scoredGames = availableGames
     .map((game) => scoreGame(game, answers))
-    .sort((left, right) => right.score - left.score)
-    .slice(0, TOP_RESULTS_LIMIT);
+    .sort((left, right) => right.score - left.score);
+
+  logTopScoredGames(scoredGames);
+
+  return scoredGames.slice(0, TOP_RESULTS_LIMIT);
 }
 
 function scoreGame(game: Game, answers: MatchGamesAnswers): GameMatchResult {
@@ -169,4 +173,141 @@ function getRatioScore(matches: number, total: number, weight: number) {
 
 function clampScore(score: number) {
   return Math.min(Math.max(score, 0), 100);
+}
+
+function logGameDatabaseDiagnostics(gamesToAnalyze: Game[]) {
+  console.log("Games loaded:", gamesToAnalyze.length);
+  console.log("Tag statistics:");
+  console.table(getTagStatistics(gamesToAnalyze));
+  console.log("First 20 games:");
+  console.table(
+    gamesToAnalyze.slice(0, 20).map((game) => ({
+      title: game.title,
+      tags: game.tags.length,
+      steamAppId: game.steamAppId,
+    })),
+  );
+  console.log("Unknown tags:", getUnknownTags(gamesToAnalyze));
+  console.log(
+    "Games without tags:",
+    gamesToAnalyze
+      .filter((game) => game.tags.length === 0)
+      .map((game) => game.title),
+  );
+
+  const gamesWithoutSteamAppId = gamesToAnalyze.filter(
+    (game) => !game.steamAppId,
+  );
+  console.log("Games without steamAppId count:", gamesWithoutSteamAppId.length);
+  console.log(
+    "Games without steamAppId examples:",
+    gamesWithoutSteamAppId.slice(0, 20).map((game) => game.title),
+  );
+
+  const gamesWithoutSteamUrl = gamesToAnalyze.filter((game) => !game.steamUrl);
+  console.log("Games without steamUrl count:", gamesWithoutSteamUrl.length);
+  console.log(
+    "Games without steamUrl examples:",
+    gamesWithoutSteamUrl.slice(0, 20).map((game) => game.title),
+  );
+
+  console.log("Suspiciously old games:", getSuspiciouslyOldGames(gamesToAnalyze));
+  console.log("Duplicate steamAppId:", getDuplicateValues(gamesToAnalyze, "steamAppId"));
+  console.log("Duplicate titles:", getDuplicateValues(gamesToAnalyze, "title"));
+}
+
+function getTagStatistics(gamesToAnalyze: Game[]) {
+  const tagCounts = new Map<string, number>();
+
+  for (const game of gamesToAnalyze) {
+    for (const tag of game.tags) {
+      tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+    }
+  }
+
+  return Array.from(tagCounts.entries())
+    .map(([tag, count]) => ({
+      Tag: tag,
+      Count: count,
+    }))
+    .sort(
+      (left, right) => right.Count - left.Count || left.Tag.localeCompare(right.Tag),
+    );
+}
+
+function getUnknownTags(gamesToAnalyze: Game[]) {
+  const knownTags = new Set(
+    questions.flatMap((question) =>
+      question.options.map((option) => option.value),
+    ),
+  );
+  const gameTags = new Set(gamesToAnalyze.flatMap((game) => game.tags));
+
+  return Array.from(gameTags)
+    .filter((tag) => !knownTags.has(tag))
+    .sort();
+}
+
+function getSuspiciouslyOldGames(gamesToAnalyze: Game[]) {
+  return gamesToAnalyze
+    .map((game) => ({
+      title: game.title,
+      year: getGameReleaseYear(game),
+    }))
+    .filter(
+      (game): game is { title: string; year: number } =>
+        typeof game.year === "number" && game.year < 2010,
+    );
+}
+
+function getGameReleaseYear(game: Game) {
+  const gameWithReleaseData = game as Game & {
+    releaseYear?: number;
+    releaseDate?: string;
+    release_date?: {
+      date?: string;
+    };
+  };
+
+  if (typeof gameWithReleaseData.releaseYear === "number") {
+    return gameWithReleaseData.releaseYear;
+  }
+
+  return parseReleaseYear(
+    gameWithReleaseData.releaseDate ?? gameWithReleaseData.release_date?.date,
+  );
+}
+
+function parseReleaseYear(value: string | undefined) {
+  const match = value?.match(/\b(19|20)\d{2}\b/);
+
+  return match ? Number(match[0]) : undefined;
+}
+
+function getDuplicateValues(gamesToAnalyze: Game[], key: "steamAppId" | "title") {
+  const gamesByValue = new Map<string, string[]>();
+
+  for (const game of gamesToAnalyze) {
+    const value = String(game[key] ?? "");
+
+    if (!value) {
+      continue;
+    }
+
+    gamesByValue.set(value, [...(gamesByValue.get(value) ?? []), game.title]);
+  }
+
+  return Array.from(gamesByValue.entries())
+    .filter(([, titles]) => titles.length > 1)
+    .map(([value, titles]) => ({ value, titles }));
+}
+
+function logTopScoredGames(scoredGames: GameMatchResult[]) {
+  console.log(
+    "Top 20 scored games:",
+    scoredGames.slice(0, 20).map(({ game, score }) => ({
+      title: game.title,
+      score,
+    })),
+  );
 }

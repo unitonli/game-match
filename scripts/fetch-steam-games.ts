@@ -29,6 +29,10 @@ type SteamAppDetails = {
   about_the_game?: string;
   header_image?: string;
   is_free?: boolean;
+  release_date?: {
+    coming_soon?: boolean;
+    date?: string;
+  };
   categories?: SteamCategory[];
   genres?: SteamGenre[];
 };
@@ -110,6 +114,9 @@ const MAX_RATE_LIMIT_RETRIES = 2;
 const CHECKPOINT_SIZE = 25;
 const MIN_OWNERS = 50_000;
 const MIN_POSITIVE_REVIEWS = 500;
+const MIN_RELEASE_YEAR = 2015;
+const VERY_POPULAR_OWNERS_MIN = 1_000_000;
+const VERY_POPULAR_POSITIVE_REVIEWS = 20_000;
 const STEAM_STORE_BASE_URL = "https://store.steampowered.com/app";
 const STEAM_CDN_BASE_URL = "https://cdn.cloudflare.steamstatic.com/steam/apps";
 const IMPORTANT_STEAMSPY_TAGS = new Set([
@@ -197,6 +204,15 @@ async function main() {
 
       if (!details || shouldSkipDetails(details)) {
         skippedCount += 1;
+        await delay(requestDelayMs);
+        continue;
+      }
+
+      if (shouldSkipByReleaseYear(candidate, details)) {
+        skippedCount += 1;
+        console.log(
+          `[${position}/${candidates.length}] appId=${candidate.appId} skipped old release`,
+        );
         await delay(requestDelayMs);
         continue;
       }
@@ -410,6 +426,32 @@ function shouldSkipDetails(details: SteamAppDetails) {
 
   return getRawMetadata(details).some((metadata) =>
     SKIP_TITLE_PATTERNS.some((pattern) => metadata.includes(pattern)),
+  );
+}
+
+function shouldSkipByReleaseYear(
+  candidate: CandidateGame,
+  details: SteamAppDetails,
+) {
+  const releaseYear = parseSteamReleaseYear(details.release_date?.date ?? "");
+
+  return (
+    typeof releaseYear === "number" &&
+    releaseYear < MIN_RELEASE_YEAR &&
+    !isVeryPopularCandidate(candidate)
+  );
+}
+
+function parseSteamReleaseYear(date: string) {
+  const match = date.match(/\b(19|20)\d{2}\b/);
+
+  return match ? Number(match[0]) : null;
+}
+
+function isVeryPopularCandidate(candidate: CandidateGame) {
+  return (
+    (candidate.ownersMin ?? 0) >= VERY_POPULAR_OWNERS_MIN ||
+    (candidate.positive ?? 0) >= VERY_POPULAR_POSITIVE_REVIEWS
   );
 }
 
