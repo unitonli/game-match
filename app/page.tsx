@@ -16,14 +16,14 @@ export default function HomePage() {
       <section className="flex max-w-md flex-col items-center text-center">
         <h1 className="text-5xl font-bold tracking-tight">Game Match</h1>
         <p className="mt-4 text-lg text-gray-500">
-          Find the perfect game for your squad
+          Найди идеальную игру для вашего отряда
         </p>
         <button
           type="button"
           onClick={handleCreateRoom}
           className="mt-8 rounded-lg bg-foreground px-6 py-3 font-semibold text-background transition hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-foreground focus:ring-offset-2 focus:ring-offset-background"
         >
-          Create Room
+          Создать комнату
         </button>
       </section>
     </main>
