@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { getSteamHeaderImageUrl } from "@/src/lib/getSteamImageUrl";
 import { matchGames, type MatchGamesAnswers } from "@/src/lib/matchGames";
@@ -31,8 +32,17 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
             Комната {roomCode}
           </p>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            Ответы для этой комнаты не найдены
+            Сначала пройдите опрос
           </h1>
+          <p className="mt-3 text-base leading-7 text-white/55">
+            Чтобы подобрать игры, нужно ответить на несколько вопросов.
+          </p>
+          <Link
+            href={`/room/${roomCode}/quiz`}
+            className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-[10px] bg-white px-5 text-sm font-bold text-black transition hover:-translate-y-0.5 hover:bg-white/88 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0b0b0b] sm:w-auto"
+          >
+            Пройти опрос
+          </Link>
         </section>
       </main>
     );
