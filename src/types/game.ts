@@ -3,6 +3,7 @@ export type Game = {
   title: string;
   description: string;
   coverUrl: string;
+  steamAppId: number;
   steamUrl: string;
   minPlayers: number;
   maxPlayers: number;

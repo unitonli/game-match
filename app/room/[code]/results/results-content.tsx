@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
+import { getSteamHeaderImageUrl } from "@/src/lib/getSteamImageUrl";
 import { matchGames, type MatchGamesAnswers } from "@/src/lib/matchGames";
 import { getQuizAnswersStorageKey } from "@/src/lib/quizStorage";
 
@@ -44,10 +45,10 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
             Комната {roomCode}
           </p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Спасибо, ваши ответы сохранены
+            Ваши совпадения
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-foreground/60">
-            Вот top 10 игр, которые лучше всего подходят под выбранные
+            Вот топ 10 игр, которые лучше всего подходят под выбранные
             предпочтения.
           </p>
         </div>
@@ -58,6 +59,17 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
               key={game.id}
               className="rounded-2xl border border-foreground/10 bg-background p-5 shadow-sm"
             >
+              <div className="mb-5 overflow-hidden rounded-xl bg-foreground/[0.04]">
+                <img
+                  src={getSteamHeaderImageUrl(game.steamAppId)}
+                  alt={game.title}
+                  className="aspect-[16/7] w-full object-cover"
+                  onError={(event) => {
+                    event.currentTarget.hidden = true;
+                  }}
+                />
+              </div>
+
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-semibold tracking-tight text-foreground">

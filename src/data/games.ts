@@ -8,6 +8,7 @@ export const games: Game[] = [
       "Кооперативный шутер про космических дворфов, добычу ресурсов и командные вылазки в опасные пещеры.",
     coverUrl:
       "https://cdn.cloudflare.steamstatic.com/steam/apps/548430/header.jpg",
+    steamAppId: 548430,
     steamUrl: "https://store.steampowered.com/app/548430/Deep_Rock_Galactic/",
     minPlayers: 1,
     maxPlayers: 4,
@@ -30,6 +31,7 @@ export const games: Game[] = [
     description:
       "Выживание в мире викингов с исследованием, строительством базы, крафтом и битвами с боссами.",
     coverUrl: "https://cdn.cloudflare.steamstatic.com/steam/apps/892970/header.jpg",
+    steamAppId: 892970,
     steamUrl: "https://store.steampowered.com/app/892970/Valheim/",
     minPlayers: 1,
     maxPlayers: 10,
@@ -55,6 +57,7 @@ export const games: Game[] = [
       "Кооперативный хоррор о сборе лута на заброшенных лунах, где паника быстро становится частью веселья.",
     coverUrl:
       "https://cdn.cloudflare.steamstatic.com/steam/apps/1966720/header.jpg",
+    steamAppId: 1966720,
     steamUrl: "https://store.steampowered.com/app/1966720/Lethal_Company/",
     minPlayers: 1,
     maxPlayers: 4,
@@ -77,6 +80,7 @@ export const games: Game[] = [
     description:
       "Песочница с крафтом, исследованием, строительством и постепенной прокачкой через боссов и лут.",
     coverUrl: "https://cdn.cloudflare.steamstatic.com/steam/apps/105600/header.jpg",
+    steamAppId: 105600,
     steamUrl: "https://store.steampowered.com/app/105600/Terraria/",
     minPlayers: 1,
     maxPlayers: 8,
@@ -103,6 +107,7 @@ export const games: Game[] = [
       "Подземная кооперативная песочница с добычей ресурсов, строительством базы и исследованием биомов.",
     coverUrl:
       "https://cdn.cloudflare.steamstatic.com/steam/apps/1621690/header.jpg",
+    steamAppId: 1621690,
     steamUrl: "https://store.steampowered.com/app/1621690/Core_Keeper/",
     minPlayers: 1,
     maxPlayers: 8,
@@ -128,6 +133,7 @@ export const games: Game[] = [
       "Хардкорное зомби-выживание с глубоким симулятором, управлением ресурсами и высокой ценой ошибки.",
     coverUrl:
       "https://cdn.cloudflare.steamstatic.com/steam/apps/108600/header.jpg",
+    steamAppId: 108600,
     steamUrl: "https://store.steampowered.com/app/108600/Project_Zomboid/",
     minPlayers: 1,
     maxPlayers: 32,
@@ -154,6 +160,7 @@ export const games: Game[] = [
       "Кооперативное расследование паранормальных явлений, где команда собирает улики и пытается выжить.",
     coverUrl:
       "https://cdn.cloudflare.steamstatic.com/steam/apps/739630/header.jpg",
+    steamAppId: 739630,
     steamUrl: "https://store.steampowered.com/app/739630/Phasmophobia/",
     minPlayers: 1,
     maxPlayers: 4,
@@ -168,6 +175,7 @@ export const games: Game[] = [
     description:
       "Классический командный зомби-шутер с быстрыми кампаниями, PvE и соревновательными режимами.",
     coverUrl: "https://cdn.cloudflare.steamstatic.com/steam/apps/550/header.jpg",
+    steamAppId: 550,
     steamUrl: "https://store.steampowered.com/app/550/Left_4_Dead_2/",
     minPlayers: 1,
     maxPlayers: 8,
@@ -191,6 +199,7 @@ export const games: Game[] = [
       "Кооперативный PvE-шутер про масштабные миссии, командную работу и управляемый хаос.",
     coverUrl:
       "https://cdn.cloudflare.steamstatic.com/steam/apps/553850/header.jpg",
+    steamAppId: 553850,
     steamUrl: "https://store.steampowered.com/app/553850/HELLDIVERS_2/",
     minPlayers: 1,
     maxPlayers: 4,
@@ -214,6 +223,7 @@ export const games: Game[] = [
       "Пиратская песочница про морские путешествия, лут, совместные приключения и столкновения с другими экипажами.",
     coverUrl:
       "https://cdn.cloudflare.steamstatic.com/steam/apps/1172620/header.jpg",
+    steamAppId: 1172620,
     steamUrl: "https://store.steampowered.com/app/1172620/Sea_of_Thieves/",
     minPlayers: 1,
     maxPlayers: 4,
@@ -237,6 +247,7 @@ export const games: Game[] = [
     description:
       "Кооперативное выживание на острове с хоррором, крафтом, строительством и исследованием пещер.",
     coverUrl: "https://cdn.cloudflare.steamstatic.com/steam/apps/242760/header.jpg",
+    steamAppId: 242760,
     steamUrl: "https://store.steampowered.com/app/242760/The_Forest/",
     minPlayers: 1,
     maxPlayers: 8,
@@ -261,6 +272,7 @@ export const games: Game[] = [
       "Современное продолжение The Forest с выживанием, строительством, исследованием и напряженной атмосферой.",
     coverUrl:
       "https://cdn.cloudflare.steamstatic.com/steam/apps/1326470/header.jpg",
+    steamAppId: 1326470,
     steamUrl: "https://store.steampowered.com/app/1326470/Sons_Of_The_Forest/",
     minPlayers: 1,
     maxPlayers: 8,
@@ -284,6 +296,7 @@ export const games: Game[] = [
     description:
       "Онлайн-выживание с PvP, крафтом, строительством базы, рейдами и жесткой конкуренцией за ресурсы.",
     coverUrl: "https://cdn.cloudflare.steamstatic.com/steam/apps/252490/header.jpg",
+    steamAppId: 252490,
     steamUrl: "https://store.steampowered.com/app/252490/Rust/",
     minPlayers: 1,
     maxPlayers: 100,
@@ -308,6 +321,7 @@ export const games: Game[] = [
     description:
       "Быстрый кооперативный хаос на кухне, где важны коммуникация, тайминг и командная работа.",
     coverUrl: "https://cdn.cloudflare.steamstatic.com/steam/apps/728880/header.jpg",
+    steamAppId: 728880,
     steamUrl: "https://store.steampowered.com/app/728880/Overcooked_2/",
     minPlayers: 1,
     maxPlayers: 4,
@@ -329,6 +343,7 @@ export const games: Game[] = [
     description:
       "Кооперативный roguelike-шутер с лутом, прокачкой персонажей и нарастающей сложностью забегов.",
     coverUrl: "https://cdn.cloudflare.steamstatic.com/steam/apps/632360/header.jpg",
+    steamAppId: 632360,
     steamUrl: "https://store.steampowered.com/app/632360/Risk_of_Rain_2/",
     minPlayers: 1,
     maxPlayers: 4,
