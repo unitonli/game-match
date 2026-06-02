@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { FormEvent, useState, useSyncExternalStore } from "react";
 import {
+  addRoomPlayer,
   getRoomNicknameStorageKey,
-  getRoomParticipantCompletedStorageKey,
+  readRoomPlayers,
   ROOM_PARTICIPANT_STORAGE_EVENT,
 } from "@/src/lib/roomParticipantStorage";
 import { CopyRoomLinkButton } from "./copy-room-link-button";
@@ -21,16 +22,16 @@ export function RoomContent({ code }: RoomContentProps) {
     () => localStorage.getItem(nicknameStorageKey),
     () => null,
   );
-  const isQuizCompleted = useSyncExternalStore(
+  const players = useSyncExternalStore(
     subscribeToParticipantStorage,
-    () =>
-      nickname
-        ? localStorage.getItem(
-            getRoomParticipantCompletedStorageKey(code, nickname),
-          ) === "true"
-        : false,
-    () => false,
+    () => readRoomPlayers(code),
+    () => [],
   );
+  const currentPlayer = players.find((player) => player.nickname === nickname);
+  const isQuizCompleted = currentPlayer?.completedQuiz ?? false;
+  const completedPlayersCount = players.filter(
+    (player) => player.completedQuiz,
+  ).length;
 
   const roomPath = `/room/${code}`;
   const quizPath = `${roomPath}/quiz`;
@@ -50,6 +51,7 @@ export function RoomContent({ code }: RoomContentProps) {
     }
 
     localStorage.setItem(nicknameStorageKey, trimmedNickname);
+    addRoomPlayer(code, trimmedNickname);
     window.dispatchEvent(new Event(ROOM_PARTICIPANT_STORAGE_EVENT));
   }
 
@@ -125,6 +127,39 @@ export function RoomContent({ code }: RoomContentProps) {
                   {roomPath}
                 </p>
                 <CopyRoomLinkButton roomPath={roomPath} />
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <p className="text-sm font-semibold text-white/45">
+                  Участники
+                </p>
+                <p className="text-sm font-semibold text-white/65">
+                  {completedPlayersCount} из {players.length} участников
+                  завершили опрос
+                </p>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {players.map((player) => (
+                  <div
+                    key={player.nickname}
+                    className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#050505] px-4 py-3"
+                  >
+                    <span className="font-medium text-white/78">
+                      {player.nickname}
+                    </span>
+                    <span
+                      aria-label={
+                        player.completedQuiz
+                          ? "Опрос завершен"
+                          : "Опрос не завершен"
+                      }
+                    >
+                      {player.completedQuiz ? "✅" : "⏳"}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
 

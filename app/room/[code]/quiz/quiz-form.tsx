@@ -8,6 +8,7 @@ import {
   getRoomParticipantAnswersStorageKey,
   getRoomParticipantCompletedStorageKey,
   ROOM_PARTICIPANT_STORAGE_EVENT,
+  updateRoomPlayerCompletion,
 } from "@/src/lib/roomParticipantStorage";
 
 type QuizFormProps = {
@@ -81,6 +82,7 @@ export function QuizForm({ roomCode }: QuizFormProps) {
         getRoomParticipantCompletedStorageKey(roomCode, nickname),
         "true",
       );
+      updateRoomPlayerCompletion(roomCode, nickname, true);
       window.dispatchEvent(new Event(ROOM_PARTICIPANT_STORAGE_EVENT));
       router.push(`/room/${roomCode}`);
       return;
