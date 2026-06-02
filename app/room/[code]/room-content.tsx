@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState, useSyncExternalStore } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   addRoomPlayer,
   getRoomNicknameStorageKey,
   readRoomPlayers,
-  ROOM_PARTICIPANT_STORAGE_EVENT,
+  type RoomPlayer,
 } from "@/src/lib/roomParticipantStorage";
 import { CopyRoomLinkButton } from "./copy-room-link-button";
 
@@ -15,18 +15,10 @@ type RoomContentProps = {
 };
 
 export function RoomContent({ code }: RoomContentProps) {
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [nickname, setNickname] = useState<string | null>(null);
   const [nicknameInput, setNicknameInput] = useState("");
-  const nicknameStorageKey = getRoomNicknameStorageKey(code);
-  const nickname = useSyncExternalStore(
-    subscribeToParticipantStorage,
-    () => localStorage.getItem(nicknameStorageKey),
-    () => null,
-  );
-  const players = useSyncExternalStore(
-    subscribeToParticipantStorage,
-    () => readRoomPlayers(code),
-    () => [],
-  );
+  const [players, setPlayers] = useState<RoomPlayer[]>([]);
   const currentPlayer = players.find((player) => player.nickname === nickname);
   const isQuizCompleted = currentPlayer?.completedQuiz ?? false;
   const completedPlayersCount = players.filter(
@@ -41,6 +33,16 @@ export function RoomContent({ code }: RoomContentProps) {
     "Показываем топ игр для компании",
   ];
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setNickname(localStorage.getItem(getRoomNicknameStorageKey(code)));
+      setPlayers(readRoomPlayers(code));
+      setIsInitialized(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [code]);
+
   function handleJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -50,9 +52,20 @@ export function RoomContent({ code }: RoomContentProps) {
       return;
     }
 
+    const nicknameStorageKey = getRoomNicknameStorageKey(code);
     localStorage.setItem(nicknameStorageKey, trimmedNickname);
-    addRoomPlayer(code, trimmedNickname);
-    window.dispatchEvent(new Event(ROOM_PARTICIPANT_STORAGE_EVENT));
+    const nextPlayers = addRoomPlayer(code, trimmedNickname);
+    setNickname(trimmedNickname);
+    setPlayers(nextPlayers);
+    setNicknameInput("");
+  }
+
+  if (!isInitialized) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#050505] px-6 py-12 text-white sm:px-8">
+        <p className="text-sm text-white/45">Загружаем комнату...</p>
+      </main>
+    );
   }
 
   if (!nickname) {
@@ -195,14 +208,4 @@ export function RoomContent({ code }: RoomContentProps) {
       </section>
     </main>
   );
-}
-
-function subscribeToParticipantStorage(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(ROOM_PARTICIPANT_STORAGE_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(ROOM_PARTICIPANT_STORAGE_EVENT, onStoreChange);
-  };
 }

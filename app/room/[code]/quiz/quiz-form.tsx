@@ -1,13 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { questions } from "@/src/data/questions";
 import {
   getRoomNicknameStorageKey,
   getRoomParticipantAnswersStorageKey,
   getRoomParticipantCompletedStorageKey,
-  ROOM_PARTICIPANT_STORAGE_EVENT,
   updateRoomPlayerCompletion,
 } from "@/src/lib/roomParticipantStorage";
 
@@ -19,14 +18,10 @@ type QuizAnswers = Record<string, string[]>;
 
 export function QuizForm({ roomCode }: QuizFormProps) {
   const router = useRouter();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [nickname, setNickname] = useState<string | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswers>({});
-  const nicknameStorageKey = getRoomNicknameStorageKey(roomCode);
-  const nickname = useSyncExternalStore(
-    subscribeToParticipantStorage,
-    () => localStorage.getItem(nicknameStorageKey),
-    () => null,
-  );
 
   const currentQuestion = questions[currentQuestionIndex];
   const currentAnswer = answers[currentQuestion.key] ?? [];
@@ -37,10 +32,22 @@ export function QuizForm({ roomCode }: QuizFormProps) {
   );
 
   useEffect(() => {
-    if (!nickname) {
-      router.replace(`/room/${roomCode}`);
-    }
-  }, [nickname, roomCode, router]);
+    const timeoutId = window.setTimeout(() => {
+      const storedNickname = localStorage.getItem(
+        getRoomNicknameStorageKey(roomCode),
+      );
+
+      if (!storedNickname) {
+        router.replace(`/room/${roomCode}`);
+        return;
+      }
+
+      setNickname(storedNickname);
+      setIsInitialized(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [roomCode, router]);
 
   function handleSelect(optionValue: string) {
     setAnswers((currentAnswers) => {
@@ -83,7 +90,6 @@ export function QuizForm({ roomCode }: QuizFormProps) {
         "true",
       );
       updateRoomPlayerCompletion(roomCode, nickname, true);
-      window.dispatchEvent(new Event(ROOM_PARTICIPANT_STORAGE_EVENT));
       router.push(`/room/${roomCode}`);
       return;
     }
@@ -93,7 +99,7 @@ export function QuizForm({ roomCode }: QuizFormProps) {
     );
   }
 
-  if (!nickname) {
+  if (!isInitialized || !nickname) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
         <p className="text-sm text-foreground/55">Перенаправляем в комнату...</p>
@@ -179,14 +185,4 @@ export function QuizForm({ roomCode }: QuizFormProps) {
       </section>
     </main>
   );
-}
-
-function subscribeToParticipantStorage(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(ROOM_PARTICIPANT_STORAGE_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(ROOM_PARTICIPANT_STORAGE_EVENT, onStoreChange);
-  };
 }
