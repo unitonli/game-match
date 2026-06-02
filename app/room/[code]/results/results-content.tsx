@@ -16,20 +16,17 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
     () => sessionStorage.getItem(storageKey),
     () => null,
   );
-  const answers = useMemo(
-    () => parseAnswers(storedAnswers),
-    [storedAnswers],
-  );
+  const answers = useMemo(() => parseAnswers(storedAnswers), [storedAnswers]);
   const results = useMemo(() => matchGames(answers), [answers]);
 
   if (!storedAnswers) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
-        <section className="w-full max-w-xl rounded-2xl border border-foreground/10 bg-background p-8 text-center shadow-sm sm:p-10">
-          <p className="text-sm font-medium uppercase text-foreground/50">
+      <main className="flex min-h-screen items-center justify-center bg-[#050505] px-6 py-12 text-white">
+        <section className="w-full max-w-xl rounded-2xl border border-white/[0.08] bg-[#0b0b0b] p-8 text-center shadow-sm sm:p-10">
+          <p className="text-sm font-medium uppercase text-white/45">
             Комната {roomCode}
           </p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             Ответы для этой комнаты не найдены
           </h1>
         </section>
@@ -38,93 +35,116 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
   }
 
   return (
-    <main className="min-h-screen bg-background px-6 py-10">
-      <section className="mx-auto w-full max-w-5xl">
-        <div className="mb-8">
-          <p className="text-sm font-medium uppercase text-foreground/50">
+    <main className="min-h-screen bg-[#050505] px-6 py-8 text-white sm:px-8">
+      <section className="mx-auto w-full max-w-[1500px]">
+        <div className="mb-7">
+          <p className="text-sm font-medium uppercase text-white/45">
             Комната {roomCode}
           </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Ваши совпадения
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-5xl">
+            🏆 Топ 10 игр для вашей компании
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-foreground/60">
+          <p className="mt-3 max-w-2xl text-base leading-7 text-white/55">
             Вот топ 10 игр, которые лучше всего подходят под выбранные
             предпочтения.
           </p>
         </div>
 
-        <div className="grid gap-3">
-          {results.map(({ game, score, reasons, conflicts }) => (
-            <article
-              key={game.id}
-              className="grid gap-4 rounded-2xl border border-foreground/10 bg-background p-4 shadow-sm lg:grid-cols-[340px_minmax(0,1fr)_150px] lg:items-stretch"
-            >
-              <div className="overflow-hidden rounded-xl bg-foreground/[0.04] lg:w-[340px]">
-                <img
-                  src={getSteamHeaderImageUrl(game.steamAppId)}
-                  alt={game.title}
-                  className="aspect-video w-full object-cover"
-                  onError={(event) => {
-                    event.currentTarget.hidden = true;
-                  }}
-                />
-              </div>
+        <div className="grid gap-4">
+          {results.map(({ game, score, reasons, conflicts }, index) => {
+            const hasSteamUrl = Boolean(game.steamUrl);
 
-              <div className="min-w-0">
-                <div className="flex items-start justify-between gap-3 lg:block">
-                  <div className="min-w-0">
-                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                      {game.title}
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-foreground/65">
-                      {game.description}
+            return (
+              <article
+                key={game.id}
+                className="grid gap-5 rounded-2xl border border-white/[0.08] bg-[#0b0b0b] p-5 shadow-sm shadow-black/30 md:grid-cols-[420px_minmax(0,1fr)_240px] md:items-center md:gap-9 md:p-6"
+              >
+                <div className="aspect-video overflow-hidden rounded-xl bg-[#151515] md:w-[420px]">
+                  <img
+                    src={getSteamHeaderImageUrl(game.steamAppId)}
+                    alt={game.title}
+                    className="h-full w-full object-cover"
+                    onError={(event) => {
+                      event.currentTarget.hidden = true;
+                    }}
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <RankBadge rank={index + 1} />
+                      <h2 className="text-2xl font-bold tracking-tight text-white sm:text-[28px] sm:leading-tight">
+                        {game.title}
+                      </h2>
+                    </div>
+                    <div className="shrink-0 md:hidden">
+                      <ScoreBadge score={score} />
+                    </div>
+                  </div>
+
+                  <p className="mt-3 max-w-[650px] text-[15px] leading-6 text-white/58 sm:text-base">
+                    {game.description}
+                  </p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {game.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-white/[0.12] bg-white/[0.03] px-2.5 py-1.5 text-xs font-medium text-white/62"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <ResultList
+                      title="Причины"
+                      items={reasons}
+                      emptyText="Нет явных совпадений"
+                      tone="positive"
+                    />
+                    <ResultList
+                      title="Конфликты"
+                      items={conflicts}
+                      emptyText="Конфликтов нет"
+                      tone="negative"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-4 md:items-center">
+                  <div className="hidden w-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.07] to-white/[0.025] p-6 text-center md:block">
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/42">
+                      Score
+                    </p>
+                    <p className="mt-3 text-[80px] font-bold leading-none text-lime-400">
+                      {score}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-white/38">
+                      /100
                     </p>
                   </div>
-                  <div className="shrink-0 lg:hidden">
-                    <ScoreWidget score={score} compact />
-                  </div>
-                </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {game.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full border border-foreground/10 px-2.5 py-1 text-xs font-medium text-foreground/65"
+                  {hasSteamUrl ? (
+                    <a
+                      href={game.steamUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-white px-4 text-sm font-bold text-black transition hover:-translate-y-0.5 hover:bg-white/88 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0b0b0b]"
                     >
-                      {tag}
+                      Открыть в Steam
+                    </a>
+                  ) : (
+                    <span className="inline-flex h-11 w-full cursor-not-allowed items-center justify-center rounded-[10px] bg-white/20 px-4 text-sm font-bold text-white/35">
+                      Открыть в Steam
                     </span>
-                  ))}
+                  )}
                 </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <ResultList
-                    title="Причины"
-                    items={reasons}
-                    emptyText="Нет явных совпадений"
-                  />
-                  <ResultList
-                    title="Конфликты"
-                    items={conflicts}
-                    emptyText="Конфликтов нет"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 lg:justify-between">
-                <div className="hidden lg:block">
-                  <ScoreWidget score={score} />
-                </div>
-                <a
-                  href={game.steamUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-offset-2 focus:ring-offset-background"
-                >
-                  Открыть в Steam
-                </a>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </section>
     </main>
@@ -135,56 +155,72 @@ function ResultList({
   title,
   items,
   emptyText,
+  tone,
 }: {
   title: string;
   items: string[];
   emptyText: string;
+  tone: "positive" | "negative";
 }) {
+  const isPositive = tone === "positive";
+
   return (
-    <div className="rounded-xl bg-foreground/[0.03] p-3">
-      <p className="text-xs font-semibold uppercase text-foreground/55">
+    <div>
+      <p
+        className={[
+          "text-sm font-semibold",
+          isPositive ? "text-emerald-400" : "text-red-400",
+        ].join(" ")}
+      >
         {title}
       </p>
       {items.length > 0 ? (
-        <ul className="mt-2 space-y-1 text-sm leading-5 text-foreground/65">
+        <ul className="mt-1.5 space-y-1 text-sm leading-5 text-white/58">
           {items.map((item) => (
-            <li key={item}>{item}</li>
+            <li key={item} className="flex gap-2">
+              {isPositive ? (
+                <span className="shrink-0 font-semibold text-emerald-400">
+                  ✓
+                </span>
+              ) : null}
+              <span>{item}</span>
+            </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-2 text-sm text-foreground/45">{emptyText}</p>
+        <p className="mt-1.5 text-sm text-white/42">{emptyText}</p>
       )}
     </div>
   );
 }
 
-function ScoreWidget({
-  score,
-  compact = false,
-}: {
-  score: number;
-  compact?: boolean;
-}) {
+function ScoreBadge({ score }: { score: number }) {
   return (
-    <div
+    <div className="shrink-0 rounded-full border border-lime-400/35 bg-lime-400/10 px-3 py-1.5 text-sm font-bold text-lime-400">
+      {score} / 100
+    </div>
+  );
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  const classNameByRank =
+    rank === 1
+      ? "border-yellow-300/50 bg-yellow-300 text-black"
+      : rank === 2
+        ? "border-zinc-300/40 bg-zinc-300 text-black"
+        : rank === 3
+          ? "border-amber-600/50 bg-amber-700 text-white"
+          : "border-white/[0.12] bg-white/[0.04] text-white/70";
+
+  return (
+    <span
       className={[
-        "rounded-2xl border border-emerald-300/40 bg-gradient-to-br from-emerald-300/20 via-emerald-400/10 to-transparent text-center shadow-sm shadow-emerald-500/10",
-        compact ? "px-3 py-2" : "px-4 py-5",
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold",
+        classNameByRank,
       ].join(" ")}
     >
-      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
-        Score
-      </p>
-      <p
-        className={[
-          "font-semibold leading-none text-emerald-500",
-          compact ? "mt-1 text-3xl" : "mt-2 text-5xl",
-        ].join(" ")}
-      >
-        {score}
-      </p>
-      <p className="mt-1 text-xs font-semibold text-foreground/45">/100</p>
-    </div>
+      {rank}
+    </span>
   );
 }
 
