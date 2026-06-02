@@ -25,8 +25,9 @@ export function RoomContent({ code }: RoomContentProps) {
   const completedPlayers = players.filter(
     (player) => player.completedQuiz,
   ).length;
-  const allPlayersCompleted =
-    totalPlayers > 0 && completedPlayers === totalPlayers;
+  const hasPlayers = totalPlayers > 0;
+  const allPlayersCompleted = hasPlayers && completedPlayers === totalPlayers;
+  const isWaitingForPlayers = hasPlayers && completedPlayers < totalPlayers;
 
   const roomPath = `/room/${code}`;
   const quizPath = `${roomPath}/quiz`;
@@ -153,8 +154,7 @@ export function RoomContent({ code }: RoomContentProps) {
                   Участники
                 </p>
                 <p className="text-sm font-semibold text-white/65">
-                  {completedPlayers} из {totalPlayers} участников
-                  завершили опрос
+                  {completedPlayers} из {totalPlayers} завершили опрос
                 </p>
               </div>
               <div className="mt-3 grid gap-2">
@@ -167,13 +167,14 @@ export function RoomContent({ code }: RoomContentProps) {
                       {player.nickname}
                     </span>
                     <span
-                      aria-label={
+                      className={[
+                        "rounded-full px-3 py-1 text-xs font-bold",
                         player.completedQuiz
-                          ? "Опрос завершен"
-                          : "Опрос не завершен"
-                      }
+                          ? "bg-lime-400/10 text-lime-400"
+                          : "bg-white/[0.06] text-white/45",
+                      ].join(" ")}
                     >
-                      {player.completedQuiz ? "✅" : "⏳"}
+                      {player.completedQuiz ? "Готов" : "Ожидаем"}
                     </span>
                   </div>
                 ))}
@@ -195,17 +196,21 @@ export function RoomContent({ code }: RoomContentProps) {
                   Показать результаты
                 </Link>
               </div>
-            ) : (
+            ) : null}
+
+            {isWaitingForPlayers ? (
               <div className="mt-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
                 <h2 className="text-xl font-bold tracking-tight text-white">
-                  Ожидаем остальных игроков
+                  Ожидаем остальных
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-white/60">
-                  {completedPlayers} из {totalPlayers} участников завершили
-                  опрос
+                  Результаты появятся, когда все участники пройдут опрос.
+                </p>
+                <p className="mt-3 text-sm font-semibold text-white/72">
+                  {completedPlayers} из {totalPlayers} завершили опрос
                 </p>
               </div>
-            )}
+            ) : null}
 
             <Link
               href={quizPath}
