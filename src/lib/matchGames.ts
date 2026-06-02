@@ -1,4 +1,5 @@
 import { games } from "@/src/data/games";
+import { generatedGames } from "@/src/data/generated-games";
 import type { Game } from "@/src/types/game";
 
 export type MatchGamesAnswers = Partial<Record<string, string | string[]>>;
@@ -24,9 +25,12 @@ const MATCH_WEIGHTS = {
 
 const DISLIKED_GENRE_PENALTY = 25;
 const MAX_DISLIKED_GENRE_PENALTY = 60;
+const gameSource = generatedGames.length > 0 ? generatedGames : games;
+
+console.log(`Games loaded: ${gameSource.length}`);
 
 export function matchGames(answers: MatchGamesAnswers): GameMatchResult[] {
-  return games
+  return gameSource
     .map((game) => scoreGame(game, answers))
     .sort((left, right) => right.score - left.score)
     .slice(0, TOP_RESULTS_LIMIT);
