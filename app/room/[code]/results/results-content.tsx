@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { getSteamHeaderImageUrl } from "@/src/lib/getSteamImageUrl";
 import { matchGames, type MatchGamesAnswers } from "@/src/lib/matchGames";
 import { getQuizAnswersStorageKey } from "@/src/lib/quizStorage";
@@ -10,6 +10,7 @@ type ResultsContentProps = {
 };
 
 export function ResultsContent({ roomCode }: ResultsContentProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const storageKey = getQuizAnswersStorageKey(roomCode);
   const storedAnswers = useSyncExternalStore(
     subscribeToStorage,
@@ -18,6 +19,9 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
   );
   const answers = useMemo(() => parseAnswers(storedAnswers), [storedAnswers]);
   const results = useMemo(() => matchGames(answers), [answers]);
+  const hiddenResultsCount = Math.max(results.length - 3, 0);
+  const visibleResults = isExpanded ? results : results.slice(0, 3);
+  const shouldShowToggle = hiddenResultsCount > 0;
 
   if (!storedAnswers) {
     return (
@@ -51,7 +55,7 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
         </div>
 
         <div className="grid gap-4">
-          {results.map(({ game, score, reasons, conflicts }, index) => {
+          {visibleResults.map(({ game, score, reasons, conflicts }, index) => {
             const hasSteamUrl = Boolean(game.steamUrl);
 
             return (
@@ -146,6 +150,20 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
             );
           })}
         </div>
+
+        {shouldShowToggle ? (
+          <div className="mt-5 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setIsExpanded((currentValue) => !currentValue)}
+              className="inline-flex min-h-11 items-center justify-center rounded-[10px] border border-white/[0.12] bg-white/[0.04] px-5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#050505]"
+            >
+              {isExpanded
+                ? "Скрыть остальные"
+                : `Показать еще ${hiddenResultsCount} игр`}
+            </button>
+          </div>
+        ) : null}
       </section>
     </main>
   );
