@@ -53,66 +53,76 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
           </p>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {results.map(({ game, score, reasons, conflicts }) => (
             <article
               key={game.id}
-              className="rounded-2xl border border-foreground/10 bg-background p-5 shadow-sm"
+              className="grid gap-4 rounded-2xl border border-foreground/10 bg-background p-4 shadow-sm lg:grid-cols-[340px_minmax(0,1fr)_150px] lg:items-stretch"
             >
-              <div className="mb-5 overflow-hidden rounded-xl bg-foreground/[0.04]">
+              <div className="overflow-hidden rounded-xl bg-foreground/[0.04] lg:w-[340px]">
                 <img
                   src={getSteamHeaderImageUrl(game.steamAppId)}
                   alt={game.title}
-                  className="aspect-[16/7] w-full object-cover"
+                  className="aspect-video w-full object-cover"
                   onError={(event) => {
                     event.currentTarget.hidden = true;
                   }}
                 />
               </div>
 
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                    {game.title}
-                  </h2>
-                  <p className="mt-2 max-w-3xl text-sm leading-6 text-foreground/65">
-                    {game.description}
-                  </p>
+              <div className="min-w-0">
+                <div className="flex items-start justify-between gap-3 lg:block">
+                  <div className="min-w-0">
+                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                      {game.title}
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-foreground/65">
+                      {game.description}
+                    </p>
+                  </div>
+                  <div className="shrink-0 lg:hidden">
+                    <ScoreWidget score={score} compact />
+                  </div>
                 </div>
-                <div className="shrink-0 rounded-xl border border-foreground/10 px-4 py-3 text-center">
-                  <p className="text-3xl font-semibold text-foreground">
-                    {score}
-                  </p>
-                  <p className="text-xs font-medium uppercase text-foreground/50">
-                    score
-                  </p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {game.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-foreground/10 px-2.5 py-1 text-xs font-medium text-foreground/65"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <ResultList
+                    title="Причины"
+                    items={reasons}
+                    emptyText="Нет явных совпадений"
+                  />
+                  <ResultList
+                    title="Конфликты"
+                    items={conflicts}
+                    emptyText="Конфликтов нет"
+                  />
                 </div>
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-2">
-                {game.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-foreground/10 px-3 py-1 text-xs font-medium text-foreground/65"
-                  >
-                    {tag}
-                  </span>
-                ))}
+              <div className="flex flex-col gap-3 lg:justify-between">
+                <div className="hidden lg:block">
+                  <ScoreWidget score={score} />
+                </div>
+                <a
+                  href={game.steamUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-emerald-400 px-4 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-offset-2 focus:ring-offset-background"
+                >
+                  Открыть в Steam
+                </a>
               </div>
-
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <ResultList title="Причины" items={reasons} emptyText="Нет явных совпадений" />
-                <ResultList title="Конфликты" items={conflicts} emptyText="Конфликтов нет" />
-              </div>
-
-              <a
-                href={game.steamUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-semibold text-background transition hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-foreground focus:ring-offset-2 focus:ring-offset-background"
-              >
-                Открыть в Steam
-              </a>
             </article>
           ))}
         </div>
@@ -131,10 +141,12 @@ function ResultList({
   emptyText: string;
 }) {
   return (
-    <div className="rounded-xl bg-foreground/[0.03] p-4">
-      <p className="text-sm font-semibold text-foreground">{title}</p>
+    <div className="rounded-xl bg-foreground/[0.03] p-3">
+      <p className="text-xs font-semibold uppercase text-foreground/55">
+        {title}
+      </p>
       {items.length > 0 ? (
-        <ul className="mt-2 space-y-1 text-sm text-foreground/65">
+        <ul className="mt-2 space-y-1 text-sm leading-5 text-foreground/65">
           {items.map((item) => (
             <li key={item}>{item}</li>
           ))}
@@ -142,6 +154,36 @@ function ResultList({
       ) : (
         <p className="mt-2 text-sm text-foreground/45">{emptyText}</p>
       )}
+    </div>
+  );
+}
+
+function ScoreWidget({
+  score,
+  compact = false,
+}: {
+  score: number;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={[
+        "rounded-2xl border border-emerald-300/40 bg-gradient-to-br from-emerald-300/20 via-emerald-400/10 to-transparent text-center shadow-sm shadow-emerald-500/10",
+        compact ? "px-3 py-2" : "px-4 py-5",
+      ].join(" ")}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500">
+        Score
+      </p>
+      <p
+        className={[
+          "font-semibold leading-none text-emerald-500",
+          compact ? "mt-1 text-3xl" : "mt-2 text-5xl",
+        ].join(" ")}
+      >
+        {score}
+      </p>
+      <p className="mt-1 text-xs font-semibold text-foreground/45">/100</p>
     </div>
   );
 }
