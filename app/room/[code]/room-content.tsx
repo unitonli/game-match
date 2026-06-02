@@ -21,12 +21,16 @@ export function RoomContent({ code }: RoomContentProps) {
   const [players, setPlayers] = useState<RoomPlayer[]>([]);
   const currentPlayer = players.find((player) => player.nickname === nickname);
   const isQuizCompleted = currentPlayer?.completedQuiz ?? false;
-  const completedPlayersCount = players.filter(
+  const totalPlayers = players.length;
+  const completedPlayers = players.filter(
     (player) => player.completedQuiz,
   ).length;
+  const allPlayersCompleted =
+    totalPlayers > 0 && completedPlayers === totalPlayers;
 
   const roomPath = `/room/${code}`;
   const quizPath = `${roomPath}/quiz`;
+  const resultsPath = `${roomPath}/results`;
   const steps = [
     "Каждый отвечает на вопросы",
     "Мы сравниваем предпочтения",
@@ -149,7 +153,7 @@ export function RoomContent({ code }: RoomContentProps) {
                   Участники
                 </p>
                 <p className="text-sm font-semibold text-white/65">
-                  {completedPlayersCount} из {players.length} участников
+                  {completedPlayers} из {totalPlayers} участников
                   завершили опрос
                 </p>
               </div>
@@ -175,6 +179,33 @@ export function RoomContent({ code }: RoomContentProps) {
                 ))}
               </div>
             </div>
+
+            {allPlayersCompleted ? (
+              <div className="mt-5 rounded-2xl border border-lime-400/25 bg-lime-400/10 p-4 sm:p-5">
+                <h2 className="text-xl font-bold tracking-tight text-lime-400">
+                  Все готовы
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-white/68">
+                  Все участники прошли опрос. Можно смотреть общий результат.
+                </p>
+                <Link
+                  href={resultsPath}
+                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-[10px] bg-lime-400 px-5 text-sm font-bold text-black transition hover:-translate-y-0.5 hover:bg-lime-300 focus:outline-none focus:ring-2 focus:ring-lime-300 focus:ring-offset-2 focus:ring-offset-[#0b0b0b] sm:w-auto"
+                >
+                  Показать результаты
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
+                <h2 className="text-xl font-bold tracking-tight text-white">
+                  Ожидаем остальных игроков
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-white/60">
+                  {completedPlayers} из {totalPlayers} участников завершили
+                  опрос
+                </p>
+              </div>
+            )}
 
             <Link
               href={quizPath}
