@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getSteamHeaderImageUrl } from "@/src/lib/getSteamImageUrl";
 import { matchGames, type MatchGamesAnswers } from "@/src/lib/matchGames";
-import { getQuizAnswersStorageKey } from "@/src/lib/quizStorage";
+import {
+  getRoomParticipantAnswersStorageKey,
+  readRoomPlayers,
+} from "@/src/lib/roomParticipantStorage";
 
 type ResultsContentProps = {
   roomCode: string;
@@ -12,19 +15,40 @@ type ResultsContentProps = {
 
 export function ResultsContent({ roomCode }: ResultsContentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const storageKey = getQuizAnswersStorageKey(roomCode);
-  const storedAnswers = useSyncExternalStore(
-    subscribeToStorage,
-    () => sessionStorage.getItem(storageKey),
-    () => null,
-  );
-  const answers = useMemo(() => parseAnswers(storedAnswers), [storedAnswers]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [answers, setAnswers] = useState<MatchGamesAnswers>({});
+  const [hasStoredAnswers, setHasStoredAnswers] = useState(false);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const collectedAnswers = readRoomAnswers(roomCode);
+
+      setAnswers(collectedAnswers.answers);
+      setHasStoredAnswers(collectedAnswers.hasAnswers);
+      setIsInitialized(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [roomCode]);
+
   const results = useMemo(() => matchGames(answers), [answers]);
   const hiddenResultsCount = Math.max(results.length - 3, 0);
   const visibleResults = isExpanded ? results : results.slice(0, 3);
   const shouldShowToggle = hiddenResultsCount > 0;
 
-  if (!storedAnswers) {
+  if (!isInitialized) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#050505] px-6 py-12 text-white">
+        <p className="text-sm font-medium uppercase text-white/45">
+          Загружаем результаты...
+        </p>
+      </main>
+    );
+  }
+
+  if (!hasStoredAnswers) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#050505] px-6 py-12 text-white">
         <section className="w-full max-w-xl rounded-2xl border border-white/[0.08] bg-[#0b0b0b] p-8 text-center shadow-sm sm:p-10">
@@ -252,11 +276,21 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
-function subscribeToStorage(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
+function readRoomAnswers(roomCode: string) {
+  const players = readRoomPlayers(roomCode);
+  const answers = players.reduce<MatchGamesAnswers>((mergedAnswers, player) => {
+    const playerAnswers = parseAnswers(
+      localStorage.getItem(
+        getRoomParticipantAnswersStorageKey(roomCode, player.nickname),
+      ),
+    );
 
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
+    return mergeAnswers(mergedAnswers, playerAnswers);
+  }, {});
+
+  return {
+    answers,
+    hasAnswers: hasAnyAnswer(answers),
   };
 }
 
@@ -272,6 +306,40 @@ function parseAnswers(value: string | null): MatchGamesAnswers {
   } catch {
     return {};
   }
+}
+
+function mergeAnswers(
+  mergedAnswers: MatchGamesAnswers,
+  playerAnswers: MatchGamesAnswers,
+) {
+  const nextAnswers = { ...mergedAnswers };
+
+  for (const [key, value] of Object.entries(playerAnswers)) {
+    const existingValues = normalizeAnswerValue(nextAnswers[key]);
+    const incomingValues = normalizeAnswerValue(value);
+
+    if (incomingValues.length > 0) {
+      nextAnswers[key] = Array.from(
+        new Set([...existingValues, ...incomingValues]),
+      );
+    }
+  }
+
+  return nextAnswers;
+}
+
+function normalizeAnswerValue(value: string | string[] | undefined) {
+  if (!value) {
+    return [];
+  }
+
+  return Array.isArray(value) ? value : [value];
+}
+
+function hasAnyAnswer(answers: MatchGamesAnswers) {
+  return Object.values(answers).some(
+    (answer) => normalizeAnswerValue(answer).length > 0,
+  );
 }
 
 function isAnswersRecord(value: unknown): value is MatchGamesAnswers {
