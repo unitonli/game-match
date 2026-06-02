@@ -1,7 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { questions } from "@/src/data/questions";
+import { getQuizAnswersStorageKey } from "@/src/lib/quizStorage";
 
 type QuizFormProps = {
   roomCode: string;
@@ -10,9 +12,9 @@ type QuizFormProps = {
 type QuizAnswers = Record<string, string[]>;
 
 export function QuizForm({ roomCode }: QuizFormProps) {
+  const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswers>({});
-  const [isFinished, setIsFinished] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   const currentAnswer = answers[currentQuestion.key] ?? [];
@@ -49,27 +51,16 @@ export function QuizForm({ roomCode }: QuizFormProps) {
 
   function handleNext() {
     if (isLastQuestion) {
-      setIsFinished(true);
+      sessionStorage.setItem(
+        getQuizAnswersStorageKey(roomCode),
+        JSON.stringify(answers),
+      );
+      router.push(`/room/${roomCode}/results`);
       return;
     }
 
     setCurrentQuestionIndex((index) =>
       Math.min(index + 1, questions.length - 1),
-    );
-  }
-
-  if (isFinished) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
-        <section className="w-full max-w-xl rounded-2xl border border-foreground/10 bg-background p-8 text-center shadow-sm sm:p-10">
-          <p className="text-sm font-medium uppercase text-foreground/50">
-            Комната {roomCode}
-          </p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Спасибо, ваши ответы сохранены
-          </h1>
-        </section>
-      </main>
     );
   }
 
