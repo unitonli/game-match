@@ -2,21 +2,34 @@
 
 import Link from "next/link";
 import { FormEvent, useState, useSyncExternalStore } from "react";
+import {
+  getRoomNicknameStorageKey,
+  getRoomParticipantCompletedStorageKey,
+  ROOM_PARTICIPANT_STORAGE_EVENT,
+} from "@/src/lib/roomParticipantStorage";
 import { CopyRoomLinkButton } from "./copy-room-link-button";
 
 type RoomContentProps = {
   code: string;
 };
 
-const NICKNAME_UPDATED_EVENT = "game-match:nickname-updated";
-
 export function RoomContent({ code }: RoomContentProps) {
   const [nicknameInput, setNicknameInput] = useState("");
   const nicknameStorageKey = getRoomNicknameStorageKey(code);
   const nickname = useSyncExternalStore(
-    subscribeToNickname,
+    subscribeToParticipantStorage,
     () => localStorage.getItem(nicknameStorageKey),
     () => null,
+  );
+  const isQuizCompleted = useSyncExternalStore(
+    subscribeToParticipantStorage,
+    () =>
+      nickname
+        ? localStorage.getItem(
+            getRoomParticipantCompletedStorageKey(code, nickname),
+          ) === "true"
+        : false,
+    () => false,
   );
 
   const roomPath = `/room/${code}`;
@@ -37,7 +50,7 @@ export function RoomContent({ code }: RoomContentProps) {
     }
 
     localStorage.setItem(nicknameStorageKey, trimmedNickname);
-    window.dispatchEvent(new Event(NICKNAME_UPDATED_EVENT));
+    window.dispatchEvent(new Event(ROOM_PARTICIPANT_STORAGE_EVENT));
   }
 
   if (!nickname) {
@@ -93,6 +106,11 @@ export function RoomContent({ code }: RoomContentProps) {
             <p className="mt-4 text-lg font-semibold text-lime-400">
               Привет, {nickname} 👋
             </p>
+            {isQuizCompleted ? (
+              <p className="mt-3 rounded-xl border border-lime-400/25 bg-lime-400/10 px-4 py-3 text-sm font-semibold text-lime-400">
+                Ваш опрос завершен
+              </p>
+            ) : null}
             <p className="mt-5 max-w-2xl text-base leading-7 text-white/60 sm:text-lg">
               Скопируйте ссылку, отправьте друзьям и пройдите короткий опрос,
               чтобы подобрать игру для всех.
@@ -114,7 +132,7 @@ export function RoomContent({ code }: RoomContentProps) {
               href={quizPath}
               className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-[10px] bg-white px-5 text-sm font-bold text-black transition hover:-translate-y-0.5 hover:bg-white/88 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0b0b0b] sm:w-auto"
             >
-              Пройти опрос
+              {isQuizCompleted ? "Изменить ответы" : "Пройти опрос"}
             </Link>
           </div>
 
@@ -144,16 +162,12 @@ export function RoomContent({ code }: RoomContentProps) {
   );
 }
 
-function getRoomNicknameStorageKey(roomCode: string) {
-  return `room_${roomCode}_nickname`;
-}
-
-function subscribeToNickname(onStoreChange: () => void) {
+function subscribeToParticipantStorage(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
-  window.addEventListener(NICKNAME_UPDATED_EVENT, onStoreChange);
+  window.addEventListener(ROOM_PARTICIPANT_STORAGE_EVENT, onStoreChange);
 
   return () => {
     window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(NICKNAME_UPDATED_EVENT, onStoreChange);
+    window.removeEventListener(ROOM_PARTICIPANT_STORAGE_EVENT, onStoreChange);
   };
 }

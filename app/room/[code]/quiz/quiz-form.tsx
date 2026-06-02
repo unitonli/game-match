@@ -1,9 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { questions } from "@/src/data/questions";
-import { getQuizAnswersStorageKey } from "@/src/lib/quizStorage";
+import {
+  getRoomNicknameStorageKey,
+  getRoomParticipantAnswersStorageKey,
+  getRoomParticipantCompletedStorageKey,
+  ROOM_PARTICIPANT_STORAGE_EVENT,
+} from "@/src/lib/roomParticipantStorage";
 
 type QuizFormProps = {
   roomCode: string;
@@ -15,6 +20,12 @@ export function QuizForm({ roomCode }: QuizFormProps) {
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswers>({});
+  const nicknameStorageKey = getRoomNicknameStorageKey(roomCode);
+  const nickname = useSyncExternalStore(
+    subscribeToParticipantStorage,
+    () => localStorage.getItem(nicknameStorageKey),
+    () => null,
+  );
 
   const currentQuestion = questions[currentQuestionIndex];
   const currentAnswer = answers[currentQuestion.key] ?? [];
@@ -23,6 +34,12 @@ export function QuizForm({ roomCode }: QuizFormProps) {
     () => ((currentQuestionIndex + 1) / questions.length) * 100,
     [currentQuestionIndex],
   );
+
+  useEffect(() => {
+    if (!nickname) {
+      router.replace(`/room/${roomCode}`);
+    }
+  }, [nickname, roomCode, router]);
 
   function handleSelect(optionValue: string) {
     setAnswers((currentAnswers) => {
@@ -51,11 +68,21 @@ export function QuizForm({ roomCode }: QuizFormProps) {
 
   function handleNext() {
     if (isLastQuestion) {
-      sessionStorage.setItem(
-        getQuizAnswersStorageKey(roomCode),
+      if (!nickname) {
+        router.replace(`/room/${roomCode}`);
+        return;
+      }
+
+      localStorage.setItem(
+        getRoomParticipantAnswersStorageKey(roomCode, nickname),
         JSON.stringify(answers),
       );
-      router.push(`/room/${roomCode}/results`);
+      localStorage.setItem(
+        getRoomParticipantCompletedStorageKey(roomCode, nickname),
+        "true",
+      );
+      window.dispatchEvent(new Event(ROOM_PARTICIPANT_STORAGE_EVENT));
+      router.push(`/room/${roomCode}`);
       return;
     }
 
@@ -64,12 +91,20 @@ export function QuizForm({ roomCode }: QuizFormProps) {
     );
   }
 
+  if (!nickname) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
+        <p className="text-sm text-foreground/55">Перенаправляем в комнату...</p>
+      </main>
+    );
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
       <section className="w-full max-w-2xl rounded-2xl border border-foreground/10 bg-background p-6 shadow-sm sm:p-10">
         <div className="mb-8">
           <div className="flex items-center justify-between gap-4 text-sm text-foreground/55">
-            <span>Комната {roomCode}</span>
+            <span>Опрос для {nickname}</span>
             <span>
               {currentQuestionIndex + 1} из {questions.length}
             </span>
@@ -142,4 +177,14 @@ export function QuizForm({ roomCode }: QuizFormProps) {
       </section>
     </main>
   );
+}
+
+function subscribeToParticipantStorage(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(ROOM_PARTICIPANT_STORAGE_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(ROOM_PARTICIPANT_STORAGE_EVENT, onStoreChange);
+  };
 }
