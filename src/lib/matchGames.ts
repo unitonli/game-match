@@ -1,4 +1,5 @@
 import { games } from "@/src/data/games";
+import { excludedSteamAppIds } from "@/src/data/excluded-games";
 import { generatedGames } from "@/src/data/generated-games";
 import { questions } from "@/src/data/questions";
 import type { Game } from "@/src/types/game";
@@ -27,11 +28,16 @@ const MATCH_WEIGHTS = {
 const DISLIKED_GENRE_PENALTY = 25;
 const MAX_DISLIKED_GENRE_PENALTY = 60;
 const availableGames = generatedGames.length > 0 ? generatedGames : games;
+const excludedSteamAppIdSet = new Set(excludedSteamAppIds);
 
 export function matchGames(answers: MatchGamesAnswers): GameMatchResult[] {
-  logGameDatabaseDiagnostics(availableGames);
+  const matchableGames = availableGames.filter(
+    (game) => !excludedSteamAppIdSet.has(game.steamAppId),
+  );
 
-  const scoredGames = availableGames
+  logGameDatabaseDiagnostics(matchableGames);
+
+  const scoredGames = matchableGames
     .map((game) => scoreGame(game, answers))
     .sort((left, right) => right.score - left.score);
 
