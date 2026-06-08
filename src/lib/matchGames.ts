@@ -1,5 +1,6 @@
 import { games } from "@/src/data/games";
 import { excludedSteamAppIds } from "@/src/data/excluded-games";
+import { gameOverrides } from "@/src/data/game-overrides";
 import { generatedGames } from "@/src/data/generated-games";
 import type { Game } from "@/src/types/game";
 
@@ -39,7 +40,8 @@ const MATCH_WEIGHTS = {
 const DISLIKED_GENRE_MAX_PENALTY = 48;
 const FORMAT_MISMATCH_MAX_PENALTY = 10;
 const VIBE_MISMATCH_MAX_PENALTY = 18;
-const availableGames = generatedGames.length > 0 ? generatedGames : games;
+const baseAvailableGames = generatedGames.length > 0 ? generatedGames : games;
+const availableGames = baseAvailableGames.map(applyGameOverrides);
 const excludedSteamAppIdSet = new Set(excludedSteamAppIds);
 
 const TAG_LABELS: Record<string, string> = {
@@ -74,6 +76,28 @@ const VIBE_CONFLICTS: Record<string, string[]> = {
   hardcore: ["chill"],
   tense: ["chill"],
 };
+
+function applyGameOverrides(game: Game): Game {
+  const override = gameOverrides[game.steamAppId];
+
+  if (!override) {
+    return game;
+  }
+
+  const removeTags = new Set(override.removeTags ?? []);
+  const tags = [...new Set([...game.tags, ...(override.addTags ?? [])])].filter(
+    (tag) => !removeTags.has(tag),
+  );
+
+  return {
+    ...game,
+    tags,
+    minPlayers: override.minPlayers ?? game.minPlayers,
+    maxPlayers: override.maxPlayers ?? game.maxPlayers,
+    difficulty: override.difficulty ?? game.difficulty,
+    sessionLength: override.sessionLength ?? game.sessionLength,
+  };
+}
 
 export function matchGames(answers: MatchGamesAnswers): GameMatchResult[] {
   const answerStats = buildAnswerStats(answers);
