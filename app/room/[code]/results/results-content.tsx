@@ -319,9 +319,7 @@ function mergeAnswers(
     const incomingValues = normalizeAnswerValue(value);
 
     if (incomingValues.length > 0) {
-      nextAnswers[key] = Array.from(
-        new Set([...existingValues, ...incomingValues]),
-      );
+      nextAnswers[key] = [...existingValues, ...incomingValues];
     }
   }
 
