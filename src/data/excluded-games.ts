@@ -1,5 +1,6 @@
 export const excludedSteamAppIds = [
   2358720,
+  990080,
   431960,
   292030,
   1091500,

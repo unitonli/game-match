@@ -140,12 +140,14 @@ export function ResultsContent({ roomCode }: ResultsContentProps) {
                     <ResultList
                       title="Причины"
                       items={reasons}
+                      maxItems={3}
                       emptyText="Нет явных совпадений"
                       tone="positive"
                     />
                     <ResultList
                       title="Конфликты"
                       items={conflicts}
+                      maxItems={2}
                       emptyText="Конфликтов нет"
                       tone="negative"
                     />
@@ -207,14 +209,18 @@ function ResultList({
   title,
   items,
   emptyText,
+  maxItems,
   tone,
 }: {
   title: string;
   items: string[];
   emptyText: string;
+  maxItems: number;
   tone: "positive" | "negative";
 }) {
   const isPositive = tone === "positive";
+  const visibleItems = items.slice(0, maxItems);
+  const emptyStateText = isPositive ? emptyText : "Серьезных конфликтов нет";
 
   return (
     <div>
@@ -226,21 +232,24 @@ function ResultList({
       >
         {title}
       </p>
-      {items.length > 0 ? (
+      {visibleItems.length > 0 ? (
         <ul className="mt-1.5 space-y-1 text-sm leading-5 text-white/58">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <li key={item} className="flex gap-2">
-              {isPositive ? (
-                <span className="shrink-0 font-semibold text-emerald-400">
-                  ✓
-                </span>
-              ) : null}
+              <span
+                className={[
+                  "shrink-0 font-semibold",
+                  isPositive ? "text-emerald-400" : "text-orange-400",
+                ].join(" ")}
+              >
+                {isPositive ? "✓" : "!"}
+              </span>
               <span>{item}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-1.5 text-sm text-white/42">{emptyText}</p>
+        <p className="mt-1.5 text-sm text-white/42">{emptyStateText}</p>
       )}
     </div>
   );
