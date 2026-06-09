@@ -1,5 +1,6 @@
 import { games } from "@/src/data/games";
 import { excludedSteamAppIds } from "@/src/data/excluded-games";
+import { gameOverrides } from "@/src/data/game-overrides";
 import { generatedGames } from "@/src/data/generated-games";
 import { questions } from "@/src/data/questions";
 import type { Game } from "@/src/types/game";
@@ -12,10 +13,14 @@ type GameWithReleaseData = Game & {
   };
 };
 
-const availableGames = generatedGames.length > 0 ? generatedGames : games;
+const baseAvailableGames = generatedGames.length > 0 ? generatedGames : games;
+const availableGames = baseAvailableGames.map(applyGameOverrides);
 const excludedSteamAppIdSet = new Set(excludedSteamAppIds);
 const matchableGames = availableGames.filter(
   (game) => !excludedSteamAppIdSet.has(game.steamAppId),
+);
+const overriddenGames = availableGames.filter(
+  (game) => game.steamAppId in gameOverrides,
 );
 const multiplayerTags = new Set(["co_op", "pvp", "teamwork"]);
 const likelySinglePlayerTitlePatterns = [
@@ -72,10 +77,17 @@ function runAudit() {
   console.log("Source:", generatedGames.length > 0 ? "generated-games" : "games");
   console.log("Games loaded:", availableGames.length);
   console.log("Excluded games:", excludedSteamAppIds.length);
+  console.log("Games with overrides:", overriddenGames.length);
   console.log("Matchable games:", matchableGames.length);
   console.log("Suitable for company:", matchableGames.length - likelyRemoveIds.size);
   console.log("Likely should remove:", likelyRemoveIds.size);
   console.log("");
+
+  console.log("Overridden games:");
+  console.table(overriddenGames.map(toGameRow));
+
+  console.log("Override sanity checks:");
+  console.table(getOverrideSanityChecks());
 
   console.log("Tag statistics:");
   console.table(getTagStatistics(matchableGames));
@@ -122,6 +134,58 @@ function runAudit() {
 
   console.log("Likely single-player games:");
   console.table(likelySinglePlayerGames.map(toGameRow));
+}
+
+function applyGameOverrides(game: Game): Game {
+  const override = gameOverrides[game.steamAppId];
+
+  if (!override) {
+    return game;
+  }
+
+  const removeTags = new Set(override.removeTags ?? []);
+  const tags = [...new Set([...game.tags, ...(override.addTags ?? [])])].filter(
+    (tag) => !removeTags.has(tag),
+  );
+
+  return {
+    ...game,
+    tags,
+    minPlayers: override.minPlayers ?? game.minPlayers,
+    maxPlayers: override.maxPlayers ?? game.maxPlayers,
+    difficulty: override.difficulty ?? game.difficulty,
+    sessionLength: override.sessionLength ?? game.sessionLength,
+  };
+}
+
+function getOverrideSanityChecks() {
+  return [
+    checkTags("Stardew Valley", 413150, ["co_op", "chill"], ["horror", "tense"]),
+    checkTags("Assetto Corsa", 244210, ["racing", "pvp"], ["horror", "tense"]),
+  ];
+}
+
+function checkTags(
+  title: string,
+  steamAppId: number,
+  requiredTags: string[],
+  forbiddenTags: string[],
+) {
+  const game = availableGames.find(
+    (availableGame) => availableGame.steamAppId === steamAppId,
+  );
+  const tags = game?.tags ?? [];
+  const missingTags = requiredTags.filter((tag) => !tags.includes(tag));
+  const unexpectedTags = forbiddenTags.filter((tag) => tags.includes(tag));
+
+  return {
+    title,
+    steamAppId,
+    ok: Boolean(game) && missingTags.length === 0 && unexpectedTags.length === 0,
+    missingTags: missingTags.join(", "),
+    unexpectedTags: unexpectedTags.join(", "),
+    tags: tags.join(", "),
+  };
 }
 
 function getTagStatistics(gamesToAnalyze: Game[]) {
@@ -214,8 +278,16 @@ function isLikelySinglePlayer(game: Game) {
   const hasNoCoreMultiplayerTag = !game.tags.some((tag) =>
     multiplayerTags.has(tag),
   );
+  const hasTrustedOverride =
+    game.steamAppId in gameOverrides && !hasNoCoreMultiplayerTag;
 
-  return hasLikelySinglePlayerTitle || (hasNoCoreMultiplayerTag && game.maxPlayers <= 1);
+  if (hasTrustedOverride) {
+    return false;
+  }
+
+  return (
+    hasLikelySinglePlayerTitle || (hasNoCoreMultiplayerTag && game.maxPlayers <= 1)
+  );
 }
 
 function toGameRow(game: Game) {
